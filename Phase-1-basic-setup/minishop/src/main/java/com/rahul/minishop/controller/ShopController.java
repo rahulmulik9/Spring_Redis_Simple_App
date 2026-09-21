@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/products")
 @RequiredArgsConstructor
@@ -36,5 +38,10 @@ public class ShopController {
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         shopService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return shopService.getAllProducts();
     }
 }

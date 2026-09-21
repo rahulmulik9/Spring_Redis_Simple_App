@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -44,4 +46,9 @@ public class ShopService {
         }
         productRepository.deleteById(id);
     }
+    public List<Product> getAllProducts() {
+        log.info("Loading ALL products from DATABASE");
+        return productRepository.findAll();
+    }
+
 }
