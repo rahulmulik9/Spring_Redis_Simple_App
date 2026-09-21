@@ -45,30 +45,4 @@ public class ShopController {
     public Long addView(@PathVariable Long id) {
         return shopService.addView(id);
     }
-
-
-    //=============Cart
-
-    @PostMapping("/cart/add")
-    public Map<String, String> addToCart(@RequestParam Long userId, @RequestParam Long productId, @RequestParam(defaultValue = "1") int qty) {
-        return shopService.addToCart(userId, productId, qty);
-    }
-
-
-    @GetMapping("/cart")
-    public Map<String, String> getCart(@RequestParam Long userId) {
-        return shopService.getCart(userId);
-    }
-
-
-    @DeleteMapping("/cart/item")
-    public Map<String, String> removeFromCart(@RequestParam Long userId, @RequestParam Long productId) {
-        return shopService.removeFromCart(userId, productId);
-    }
-
-    @PostMapping("/cart/decrease")
-    public Map<String, String> decreaseInCart(@RequestParam Long userId, @RequestParam Long productId, @RequestParam(defaultValue = "1") int qty) {
-        return shopService.decreaseInCart(userId, productId, qty);
-    }
-
 }
