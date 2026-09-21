@@ -44,4 +44,5 @@ public class ShopController {
     public List<Product> getAllProducts() {
         return shopService.getAllProducts();
     }
+
 }
