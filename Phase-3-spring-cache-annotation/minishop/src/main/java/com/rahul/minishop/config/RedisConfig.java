@@ -22,8 +22,9 @@ public class RedisConfig {
         JacksonJsonRedisSerializer<Product> valueSerializer = new JacksonJsonRedisSerializer<>(Product.class);
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofSeconds(60))   // default TTL for every cache
-                .disableCachingNullValues()         // caching nulls comes later
+                .entryTtl(Duration.ofSeconds(60))
+                .computePrefixWith(cacheName -> "shop:" + cacheName + ":")
+                .disableCachingNullValues()
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
 
         return RedisCacheManager.builder(connectionFactory)
