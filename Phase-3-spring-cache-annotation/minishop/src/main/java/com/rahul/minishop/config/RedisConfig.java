@@ -23,7 +23,7 @@ public class RedisConfig {
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofSeconds(60))
-                .computePrefixWith(cacheName -> "shop:" + cacheName + ":")
+                .computePrefixWith(cacheName -> "shop:" + cacheName + ":") //key stays as shop:
                 .disableCachingNullValues()
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
 
