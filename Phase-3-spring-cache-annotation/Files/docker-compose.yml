@@ -1,0 +1,24 @@
+services:
+  minishop-db:
+    image: postgres:18
+    container_name: minishop-db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: minishop
+    ports:
+      - "5433:5432"
+    volumes:
+      - minishop-db-data:/var/lib/postgresql
+
+  minishop-redis:
+    image: redis:7
+    container_name: minishop-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - minishop-redis-data:/data
+
+volumes:
+  minishop-db-data:
+  minishop-redis-data:
