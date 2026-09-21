@@ -4,7 +4,7 @@
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/Phase-1-basic-setup/minishop/pom.xml" />
+        <option value="$PROJECT_DIR$/phase-2-manual-caching/minishop/pom.xml" />
       </list>
     </option>
   </component>
