@@ -1,0 +1,169 @@
+{
+  "info": {
+    "name": "Redis Mini Shop",
+    "description": "Redis Mini Shop - requests grouped by phase. Phase 1-4: products (DB, manual cache, annotations). Phase 5: data structures (counter, cart hash).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "productId", "value": "1" },
+    { "key": "userId", "value": "1" },
+    { "key": "qty", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Phase 1-4 - Products",
+      "item": [
+        {
+          "name": "1.3 Get all products (not cached)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            }
+          }
+        },
+        {
+          "name": "4.2 Get product (slow first time, then cached)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "4.3 Update product (@CachePut)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Mouse Pro\",\n  \"price\": 999.00,\n  \"stock\": 45\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            }
+          }
+        },
+        {
+          "name": "4.3 Delete product 20 (@CacheEvict)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/20",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "20"]
+            }
+          }
+        },
+        {
+          "name": "1.3 Get missing product (404, never cached)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "99999"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Phase 5 - Data structures",
+      "item": [
+        {
+          "name": "5.1 Add view (String + INCR)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/view",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}", "view"]
+            }
+          }
+        },
+        {
+          "name": "5.2 Cart - add item (HINCRBY)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cart/add?userId={{userId}}&productId={{productId}}&qty={{qty}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "add"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" },
+                { "key": "productId", "value": "{{productId}}" },
+                { "key": "qty", "value": "{{qty}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.2 Cart - get cart (HGETALL)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cart?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.2 Cart - decrease quantity (HINCRBY -qty)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cart/decrease?userId={{userId}}&productId={{productId}}&qty={{qty}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "decrease"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" },
+                { "key": "productId", "value": "{{productId}}" },
+                { "key": "qty", "value": "{{qty}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "5.2 Cart - remove whole item (HDEL)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cart/item?userId={{userId}}&productId={{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["cart", "item"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" },
+                { "key": "productId", "value": "{{productId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
