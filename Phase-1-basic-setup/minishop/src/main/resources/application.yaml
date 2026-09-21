@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: minishop
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/minishop
+    username: root
+    password: root
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2s
+
+server:
+  port: 8080
