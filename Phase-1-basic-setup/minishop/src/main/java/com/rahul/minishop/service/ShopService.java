@@ -15,7 +15,7 @@ public class ShopService {
 
     private final ProductRepository productRepository;
 
-    // 1.3 - slow read: this is the "expensive database call" a cache will replace later
+
     public Product getProduct(Long id) {
         log.info("Loading product {} from DATABASE", id);
         try {
@@ -27,7 +27,7 @@ public class ShopService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
     }
 
-    // 1.3
+
     public Product updateProduct(Long id, Product update) {
         Product existing = productRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
@@ -37,7 +37,7 @@ public class ShopService {
         return productRepository.save(existing);
     }
 
-    // 1.3
+
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id);
