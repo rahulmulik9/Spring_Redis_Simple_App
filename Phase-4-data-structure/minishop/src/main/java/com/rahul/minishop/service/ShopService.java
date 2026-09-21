@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +20,8 @@ import java.util.List;
 public class ShopService {
 
     private final ProductRepository productRepository;
+    private static final String VIEWS_KEY = "shop:views:";
+    private final StringRedisTemplate redisTemplate;
 
     //    public Product getProduct(Long id) {
 //        String key = "shop:product:" + id;
@@ -81,5 +84,10 @@ public class ShopService {
         }
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
+    }
+
+    //manually increasing view count
+    public Long addView(Long id) {
+        return redisTemplate.opsForValue().increment(VIEWS_KEY + id);
     }
 }
