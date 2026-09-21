@@ -33,7 +33,6 @@ public class ShopService {
             log.info("CACHE HIT for product {}", id);
             return jsonMapper.readValue(cached, Product.class);
         }
-
         log.info("CACHE MISS for product {} - loading from DATABASE", id);
         Product product = loadFromDatabase(id);
         saveToCache(product);
@@ -65,7 +64,7 @@ public class ShopService {
     }
 
 
-    //this was done to just to mimic database loading time
+    //this was done to just to mimic database loading time to delay some time
     private Product loadFromDatabase(Long id) {
         try {
             Thread.sleep(2000);
