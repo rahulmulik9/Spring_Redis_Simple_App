@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Redis Mini Shop",
-    "description": "Redis Mini Shop - requests grouped by phase. Phase 1-4: products (DB, manual cache, annotations). Phase 5: data structures (counter, cart hash).",
+    "description": "Redis Mini Shop - matches ShopController, CartController, WishlistController, RecentlyViewedController as of Phase 5.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -12,10 +12,10 @@
   ],
   "item": [
     {
-      "name": "Phase 1-4 - Products",
+      "name": "Products (ShopController)",
       "item": [
         {
-          "name": "1.3 Get all products (not cached)",
+          "name": "Get all products",
           "request": {
             "method": "GET",
             "header": [],
@@ -27,7 +27,7 @@
           }
         },
         {
-          "name": "4.2 Get product (slow first time, then cached)",
+          "name": "Get product (no userId - no tracking)",
           "request": {
             "method": "GET",
             "header": [],
@@ -39,7 +39,22 @@
           }
         },
         {
-          "name": "4.3 Update product (@CachePut)",
+          "name": "Get product (with userId - view + recent + score)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update product",
           "request": {
             "method": "PUT",
             "header": [
@@ -58,7 +73,7 @@
           }
         },
         {
-          "name": "4.3 Delete product 20 (@CacheEvict)",
+          "name": "Delete product 20",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -70,7 +85,7 @@
           }
         },
         {
-          "name": "1.3 Get missing product (404, never cached)",
+          "name": "Get missing product (404)",
           "request": {
             "method": "GET",
             "header": [],
@@ -80,14 +95,9 @@
               "path": ["products", "99999"]
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "Phase 5 - Data structures",
-      "item": [
+        },
         {
-          "name": "5.1 Add view (String + INCR)",
+          "name": "Add view (direct counter endpoint)",
           "request": {
             "method": "POST",
             "header": [],
@@ -99,7 +109,27 @@
           }
         },
         {
-          "name": "5.2 Cart - add item (HINCRBY)",
+          "name": "Get top products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/top?limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "top"],
+              "query": [
+                { "key": "limit", "value": "5" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart (CartController)",
+      "item": [
+        {
+          "name": "Add to cart",
           "request": {
             "method": "POST",
             "header": [],
@@ -116,7 +146,7 @@
           }
         },
         {
-          "name": "5.2 Cart - get cart (HGETALL)",
+          "name": "Get cart",
           "request": {
             "method": "GET",
             "header": [],
@@ -131,7 +161,7 @@
           }
         },
         {
-          "name": "5.2 Cart - decrease quantity (HINCRBY -qty)",
+          "name": "Decrease in cart",
           "request": {
             "method": "POST",
             "header": [],
@@ -148,17 +178,89 @@
           }
         },
         {
-          "name": "5.2 Cart - remove whole item (HDEL)",
+          "name": "Remove item from cart",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/cart/item?userId={{userId}}&productId={{productId}}",
+              "raw": "{{baseUrl}}/cart/remove?userId={{userId}}&productId={{productId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["cart", "item"],
+              "path": ["cart", "remove"],
               "query": [
                 { "key": "userId", "value": "{{userId}}" },
                 { "key": "productId", "value": "{{productId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist (WishlistController)",
+      "item": [
+        {
+          "name": "Add to wishlist",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/add?userId={{userId}}&productId={{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist", "add"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" },
+                { "key": "productId", "value": "{{productId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get wishlist",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove from wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wishlist/remove?userId={{userId}}&productId={{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["wishlist", "remove"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" },
+                { "key": "productId", "value": "{{productId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recently Viewed (RecentlyViewedController)",
+      "item": [
+        {
+          "name": "Get recently viewed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recently-viewed?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["recently-viewed"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" }
               ]
             }
           }
