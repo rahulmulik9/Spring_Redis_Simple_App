@@ -164,7 +164,7 @@ public class ShopService {
         redisTemplate.opsForZSet().incrementScore(TOP_PRODUCTS_KEY, String.valueOf(productId), 1);
     }
 
-    // 5.5 - ZREVRANGE with scores: highest score first, top `limit` members
+    //ZREVRANGE with scores: highest score first, top `limit` members
     public Set<ZSetOperations.TypedTuple<String>> getTopProducts(int limit) {
         Set<ZSetOperations.TypedTuple<String>> top =
                 redisTemplate.opsForZSet().reverseRangeWithScores(TOP_PRODUCTS_KEY, 0, limit - 1);
