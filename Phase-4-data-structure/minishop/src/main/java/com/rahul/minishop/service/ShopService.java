@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -30,6 +31,10 @@ public class ShopService {
     //list data structure
     private static final String RECENT_KEY = "shop:recent:";
     private static final int RECENT_LIMIT = 5;
+
+    //Wish list
+    private static final String WISHLIST_KEY = "shop:wishlist:";
+
 
     // key becomes "shop:" + cacheName + ":" + id = shop:product:1 (prefix set in RedisConfig)
     @Cacheable(cacheNames = "product", key = "#id")
@@ -121,7 +126,6 @@ public class ShopService {
     }
 
     //==================   List data structure
-
     public void addToRecentlyViewed(Long userId, Long productId) {
         String key = RECENT_KEY + userId;
         redisTemplate.opsForList().leftPush(key, String.valueOf(productId));
@@ -131,6 +135,25 @@ public class ShopService {
     public List<String> getRecentlyViewed(Long userId) {
         List<String> list = redisTemplate.opsForList().range(RECENT_KEY + userId, 0, -1);
         return list != null ? list : List.of();
+    }
+
+
+    //========================== Wish list data structure
+    //this will be saved into redis without expiry, so redis here is acting like database which store wishlist
+    // Set: SADD is idempotent, adding the same product twice has no extra effect
+    public void addToWishlist(Long userId, Long productId) {
+        redisTemplate.opsForSet().add(WISHLIST_KEY + userId, String.valueOf(productId));
+    }
+
+    // SREM removes one member
+    public void removeFromWishlist(Long userId, Long productId) {
+        redisTemplate.opsForSet().remove(WISHLIST_KEY + userId, String.valueOf(productId));
+    }
+
+    // SMEMBERS: all members, no guaranteed order, no duplicates
+    public Set<String> getWishlist(Long userId) {
+        Set<String> members = redisTemplate.opsForSet().members(WISHLIST_KEY + userId);
+        return members != null ? members : Set.of();
     }
 }
 
