@@ -8,6 +8,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,6 +35,9 @@ public class ShopService {
 
     //Wish list
     private static final String WISHLIST_KEY = "shop:wishlist:";
+
+    //Sorted
+    private static final String TOP_PRODUCTS_KEY = "shop:top-products";
 
 
     // key becomes "shop:" + cacheName + ":" + id = shop:product:1 (prefix set in RedisConfig)
@@ -155,6 +159,18 @@ public class ShopService {
         Set<String> members = redisTemplate.opsForSet().members(WISHLIST_KEY + userId);
         return members != null ? members : Set.of();
     }
+
+    public void incrementProductScore(Long productId) {
+        redisTemplate.opsForZSet().incrementScore(TOP_PRODUCTS_KEY, String.valueOf(productId), 1);
+    }
+
+    // 5.5 - ZREVRANGE with scores: highest score first, top `limit` members
+    public Set<ZSetOperations.TypedTuple<String>> getTopProducts(int limit) {
+        Set<ZSetOperations.TypedTuple<String>> top =
+                redisTemplate.opsForZSet().reverseRangeWithScores(TOP_PRODUCTS_KEY, 0, limit - 1);
+        return top != null ? top : Set.of();
+    }
+
 }
 
 /*
