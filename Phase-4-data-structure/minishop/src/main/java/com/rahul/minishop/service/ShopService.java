@@ -27,6 +27,10 @@ public class ShopService {
     private static final String CART_KEY = "shop:cart:";
     private static final Duration CART_TTL = Duration.ofMinutes(30);
 
+    //list data structure
+    private static final String RECENT_KEY = "shop:recent:";
+    private static final int RECENT_LIMIT = 5;
+
     // key becomes "shop:" + cacheName + ":" + id = shop:product:1 (prefix set in RedisConfig)
     @Cacheable(cacheNames = "product", key = "#id")
     public Product getProduct(Long id) {
@@ -82,6 +86,7 @@ public class ShopService {
     }
 
 
+    // ===== Count and Hash data structure ==================
     // Cart is stored as a Redis HASH: key = shop:cart:{userId}, field = productId, value = quantity.
     // Why not one JSON string? Adding an item would mean: read the whole cart, change it in Java, write it back.
     // If two requests do that at the same time, the second write overwrites the first, and an item is lost.
@@ -113,6 +118,19 @@ public class ShopService {
             redisTemplate.<String, String>opsForHash().delete(key, field);
         }
         return redisTemplate.<String, String>opsForHash().entries(key);
+    }
+
+    //==================   List data structure
+
+    public void addToRecentlyViewed(Long userId, Long productId) {
+        String key = RECENT_KEY + userId;
+        redisTemplate.opsForList().leftPush(key, String.valueOf(productId));
+        redisTemplate.opsForList().trim(key, 0, RECENT_LIMIT - 1);  //push at the top of array(0 index), maz size is RECENT_LIMIT (5)
+    }
+
+    public List<String> getRecentlyViewed(Long userId) {
+        List<String> list = redisTemplate.opsForList().range(RECENT_KEY + userId, 0, -1);
+        return list != null ? list : List.of();
     }
 }
 

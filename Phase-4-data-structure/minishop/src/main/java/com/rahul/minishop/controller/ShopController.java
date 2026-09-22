@@ -18,7 +18,11 @@ public class ShopController {
 
 
     @GetMapping("/{id}")
-    public Product getProduct(@PathVariable Long id) {
+    public Product getProduct(@PathVariable Long id,@RequestParam(required = false) Long userId) {
+        if (userId != null) {
+            shopService.addView(id);
+            shopService.addToRecentlyViewed(userId, id);
+        }
         return shopService.getProduct(id);
     }
 
@@ -45,4 +49,6 @@ public class ShopController {
     public Long addView(@PathVariable Long id) {
         return shopService.addView(id);
     }
+
+
 }
