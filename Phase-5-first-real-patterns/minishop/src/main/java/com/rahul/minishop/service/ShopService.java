@@ -43,6 +43,11 @@ public class ShopService {
     private static final String COUPON_KEY = "shop:coupon:";
     private static final Duration COUPON_TTL = Duration.ofMinutes(5);
 
+    //Fixed Window rate
+    private static final String RATE_LIMIT_KEY = "shop:ratelimit:";
+    private static final int RATE_LIMIT_MAX = 5;
+    private static final Duration RATE_LIMIT_WINDOW = Duration.ofSeconds(30);
+
 
     // key becomes "shop:" + cacheName + ":" + id = shop:product:1 (prefix set in RedisConfig)
     @Cacheable(cacheNames = "product", key = "#id")
@@ -185,6 +190,23 @@ public class ShopService {
         Boolean won = redisTemplate.opsForValue()
                 .setIfAbsent(COUPON_KEY + code, String.valueOf(userId), COUPON_TTL);
         return Boolean.TRUE.equals(won);
+    }
+
+
+    ///  ====== fixed window rate limiter
+    public RateLimitResult checkRateLimit(Long userId) {
+        String key = RATE_LIMIT_KEY + userId;
+        Long count = redisTemplate.opsForValue().increment(key);
+
+        if (count != null && count == 1) {
+            redisTemplate.expire(key, RATE_LIMIT_WINDOW);
+        }
+
+        if (count != null && count > RATE_LIMIT_MAX) {
+            Long ttl = redisTemplate.getExpire(key);
+            return new RateLimitResult(false, ttl != null ? ttl : 0);
+        }
+        return new RateLimitResult(true, 0);
     }
 }
 
