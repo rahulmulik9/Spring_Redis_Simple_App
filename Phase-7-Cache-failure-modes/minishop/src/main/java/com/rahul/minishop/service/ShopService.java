@@ -94,8 +94,11 @@ public class ShopService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        return productRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
+//        return productRepository.findById(id)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
+        // 8.1: no more orElseThrow — a missing product is now a null return,
+        // which @Cacheable treats as a valid, cacheable result
+        return productRepository.findById(id).orElse(null);
     }
 
     //manually increasing view count

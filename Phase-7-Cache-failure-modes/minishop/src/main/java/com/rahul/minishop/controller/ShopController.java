@@ -20,15 +20,20 @@ public class ShopController {
 
 
     @GetMapping("/{id}")
-    public Product getProduct(@PathVariable Long id, @RequestParam(required = false) Long userId) {
+    public ResponseEntity<Product> getProduct(@PathVariable Long id, @RequestParam(required = false) Long userId) {
+        Product product = shopService.getProduct(id);   // may be null — cached miss
+
+        if (product == null) {
+            return ResponseEntity.notFound().build();     //don't track views for a product that doesn't exist
+        }
+
         if (userId != null) {
             shopService.addView(id);                       //add into view this will increase view count for product
             shopService.addToRecentlyViewed(userId, id);   //This will save into recently viewed item
             shopService.incrementProductScore(id);         //THis will be sued to get maximum viewed product
         }
-        return shopService.getProduct(id);
+        return ResponseEntity.ok(product);
     }
-
 
     @PutMapping("/{id}")
     public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
