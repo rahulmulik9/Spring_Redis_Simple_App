@@ -248,6 +248,43 @@
       ]
     },
     {
+      "name": "Coupon (CouponController)",
+      "item": [
+        {
+          "name": "Claim coupon",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/coupon/claim?code=SAVE10&userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["coupon", "claim"],
+              "query": [
+                { "key": "code", "value": "SAVE10" },
+                { "key": "userId", "value": "{{userId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Claim coupon - different code",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/coupon/claim?code=WELCOME20&userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["coupon", "claim"],
+              "query": [
+                { "key": "code", "value": "WELCOME20" },
+                { "key": "userId", "value": "{{userId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Recently Viewed (RecentlyViewedController)",
       "item": [
         {
