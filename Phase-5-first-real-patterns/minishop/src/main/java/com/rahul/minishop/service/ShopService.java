@@ -198,12 +198,14 @@ public class ShopService {
         String key = RATE_LIMIT_KEY + userId;
         Long count = redisTemplate.opsForValue().increment(key);
 
-        if (count != null && count == 1) {
+        Long ttl = redisTemplate.getExpire(key);
+        if (ttl != null && ttl < 0) {
+            // key exists but has no TTL (-1) - either brand new, or a crash left it stuck. Fix it now.
             redisTemplate.expire(key, RATE_LIMIT_WINDOW);
+            ttl = RATE_LIMIT_WINDOW.getSeconds();
         }
 
         if (count != null && count > RATE_LIMIT_MAX) {
-            Long ttl = redisTemplate.getExpire(key);
             return new RateLimitResult(false, ttl != null ? ttl : 0);
         }
         return new RateLimitResult(true, 0);
