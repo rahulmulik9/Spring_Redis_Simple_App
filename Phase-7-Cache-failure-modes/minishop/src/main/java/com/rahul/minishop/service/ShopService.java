@@ -58,6 +58,7 @@ public class ShopService {
         return loadFromDatabase(id);
     }
 
+
     // always runs, then puts the returned Product into the cache
     @CachePut(cacheNames = "product", key = "#id")
     public Product updateProduct(Long id, Product update) {
