@@ -49,8 +49,10 @@ public class ShopService {
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofSeconds(30);
 
 
-    // key becomes "shop:" + cacheName + ":" + id = shop:product:1 (prefix set in RedisConfig)
-    @Cacheable(cacheNames = "product", key = "#id")
+    // sync = true fixes cache stampede — when multiple threads miss this key at the same time, only the first one runs the method and hits the DB;
+    // the rest block and wait for its result instead of all rebuilding the cache independently. Note: this lock is per-JVM only, not
+    // distributed — multiple app instances would still each rebuild once.
+    @Cacheable(cacheNames = "product", key = "#id", sync = true)
     public Product getProduct(Long id) {
         log.info("Loading product {} from DATABASE", id);
         return loadFromDatabase(id);
