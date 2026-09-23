@@ -16,6 +16,7 @@ services:
     container_name: minishop-redis
     ports:
       - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
     volumes:
       - minishop-redis-data:/data
 
