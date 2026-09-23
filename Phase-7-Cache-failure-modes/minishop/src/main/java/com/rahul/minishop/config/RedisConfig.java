@@ -24,7 +24,7 @@ public class RedisConfig {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofSeconds(60))
                 .computePrefixWith(cacheName -> "shop:" + cacheName + ":") //key stays as shop:
-                .disableCachingNullValues()
+               // .disableCachingNullValues()   //allowing null return if product not found
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer));
 
         return RedisCacheManager.builder(connectionFactory)
