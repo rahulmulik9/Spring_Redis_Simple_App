@@ -63,4 +63,16 @@ public class ShopController {
         return shopService.getTopProducts(limit);
     }
 
+
+    /// ====Buy api simple
+    @PostMapping("/{id}/buy")
+    public Product buy(@PathVariable Long id) {
+        return shopService.buy(id);
+    }
+    //race conditon handle by redis
+    @PostMapping("/{id}/buy-redis")
+    public Product buyRedis(@PathVariable Long id) {
+        return shopService.buyWithRedisDecr(id);
+    }
+
 }

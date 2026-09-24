@@ -216,30 +216,64 @@ public class ShopService {
         }
         return new RateLimitResult(true, 0);
     }
-}
 
-/*
- * CART WITH REDIS HASH - SIMPLE EXPLANATION
- * Example: user id = 1, milk id = 4 and quantity=2
- * Redis stores the cart as: shop:cart:1 -> { "4": "2" }
- *   key   = shop:cart:1 (one cart per user)
- *   field = 4 (milk's product id)
- *   value = 2 (quantity)
- *
- * ADD:      HINCRBY shop:cart:1 4 2    -> adds 2 milk
- *   Cart before: empty       -> after: {"4":"2"}
- *   Add 1 more milk          -> after: {"4":"3"}
- *   Add bread (id 7), qty 1  -> after: {"4":"5","7":"1"}
- *
- * DECREASE: HINCRBY   -> a minus number subtracts
- *   decrease milk by 1 => Cart {"4":"3"} -> {"4":"2"}
- *   When the value reaches 0, we HDEL the field so it never goes negative.
- *
- * Remember:
- *   - HINCRBY adds to the old value. It does not set a new value.
- *   - Other products in the cart are never touched.
- *   - Values come back as text ("3"), Redis still does the math.
- */
+
+    /// ================= Race condition : When multiple requrest hit buy at same time
+    /// Two way to handle tace contion : By sql and another by Redis
+    //Race Handled By using sql
+    // 1: naive buy (9.1) lost decrements when many concurrent requests all read the same stock value before any of them saved.
+    // Fixed here with a conditional UPDATE — Postgres only decrements if stock is still > 0 at the moment the UPDATE runs,
+    // so there's no separate read-then-write gap for two requests to race inside.
+    public Product buy(Long id) {
+        int rowsAffected = productRepository.decrementStockIfAvailable(id);
+
+        if (rowsAffected == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Out of stock or not found: " + id);
+        }
+
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
+    }
+
+    // 9.2 (Redis version): atomic decrement via Redis DECR.
+    // Redis is single-threaded, so each command below runs fully before the next one starts — even with 20 concurrent requests,
+    // there's no gap for two threads to read the same value and both decide to decrement it.
+
+    // setIfAbsent seeds the Redis stock counter from Postgres, but only on the very first buy for this product —
+    // later calls see the key already exists and skip seeding, so stock never gets reset mid-sale.
+    public Product buyWithRedisDecr(Long id) {
+        String stockKey = "shop:stock:" + id;
+
+        redisTemplate.opsForValue().setIfAbsent(stockKey, String.valueOf(getDbStock(id)));
+
+        Long remaining = redisTemplate.opsForValue().decrement(stockKey);
+
+        if (remaining == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Stock not initialized for: " + id);
+        }
+
+        if (remaining < 0) {
+            // oversold — put the stock back in Redis, then reject this request
+            redisTemplate.opsForValue().increment(stockKey);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Out of stock: " + id);
+        }
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
+        product.setStock(remaining.intValue());
+        productRepository.save(product);
+
+        return product;
+    }
+
+    // helper — current stock from Postgres, used only to seed Redis on first buy
+    private int getDbStock(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id))
+                .getStock();
+    }
+
+}
 
 
 
