@@ -4,6 +4,8 @@ import com.rahul.minishop.entity.Product;
 import com.rahul.minishop.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -46,6 +48,9 @@ public class ShopService {
     private static final String RATE_LIMIT_KEY = "shop:ratelimit:";
     private static final int RATE_LIMIT_MAX = 5;
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofSeconds(30);
+
+
+    private final RedissonClient redissonClient;
 
 
     // sync = true fixes cache stampede — when multiple threads miss this key at the same time, only the first one runs the method and hits the DB;
@@ -354,6 +359,35 @@ public class ShopService {
         if (result == 0) {
             log.warn("Tried to unlock {} but token didn't match — lock was not ours anymore", lockKey);
         }
+    }
+
+
+    /// =========== Redisson
+    // 10.3: same checkout operation as 10.1/10.2, now using Redisson's RLock.
+    // No manual token, no manual TTL math, no manual Lua unlock script — the
+    // watchdog automatically renews the lock's expiry every ~10s (a third of
+    // the default 30s lease) as long as this thread is still alive, so a
+    // legitimately slow critical section does NOT lose its lock early like
+    // the raw SET NX PX version did in 10.2.
+    public String lockedCheckoutRedisson(Long id) {
+        RLock lock = redissonClient.getLock("lock:product:" + id);
+
+        boolean acquired = lock.tryLock();   // no wait/lease args = watchdog mode, default 30s lease, auto-renewed
+        if (!acquired) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Checkout already in progress for: " + id);
+        }
+
+        try {
+            log.info("Redisson checkout started for product {}", id);
+            Thread.sleep(2000);   // same duration that broke the raw lock in 10.2 — this time it should NOT overlap
+            log.info("Redisson checkout finished for product {}", id);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            lock.unlock();   // Redisson checks ownership internally — safe by default, no compare-and-delete script needed
+        }
+
+        return "Checkout completed (Redisson) for product " + id;
     }
 
 }

@@ -85,4 +85,9 @@ public class ShopController {
     public String checkoutBrokenTtl(@PathVariable Long id) {
         return shopService.lockedCheckoutBrokenTtl(id);
     }
+
+    @PostMapping("/{id}/checkout-redisson")
+    public String checkoutRedisson(@PathVariable Long id) {
+        return shopService.lockedCheckoutRedisson(id);
+    }
 }
