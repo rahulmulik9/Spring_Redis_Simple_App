@@ -4,7 +4,7 @@
   <component name="MavenProjectsManager">
     <option name="originalFiles">
       <list>
-        <option value="$PROJECT_DIR$/Phase-8-Concurrency-atomicity/minishop/pom.xml" />
+        <option value="$PROJECT_DIR$/Phase-9-distributed-locks/minishop/pom.xml" />
       </list>
     </option>
   </component>

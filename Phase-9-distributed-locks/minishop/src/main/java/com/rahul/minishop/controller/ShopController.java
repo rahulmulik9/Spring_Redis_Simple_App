@@ -69,10 +69,20 @@ public class ShopController {
     public Product buy(@PathVariable Long id) {
         return shopService.buy(id);
     }
+
     //race conditon handle by redis
     @PostMapping("/{id}/buy-redis")
     public Product buyRedis(@PathVariable Long id) {
         return shopService.buyWithRedisDecr(id);
     }
 
+
+    //    @PostMapping("/{id}/checkout")
+//    public String checkout(@PathVariable Long id) {
+//        return shopService.lockedCheckout(id);
+//    }
+    @PostMapping("/{id}/checkout-broken-ttl")
+    public String checkoutBrokenTtl(@PathVariable Long id) {
+        return shopService.lockedCheckoutBrokenTtl(id);
+    }
 }

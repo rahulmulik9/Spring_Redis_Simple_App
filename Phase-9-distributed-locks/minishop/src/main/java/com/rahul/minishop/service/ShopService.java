@@ -9,14 +9,13 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -273,6 +272,89 @@ public class ShopService {
     }
 
 
+    /// ============= Distribute lock
+    public String lockedCheckout(Long id) {
+        String lockKey = "lock:product:" + id;
+        String token = UUID.randomUUID().toString();
+
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(
+                lockKey, token, Duration.ofMillis(5000)
+        );
+
+        if (!Boolean.TRUE.equals(acquired)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Checkout already in progress for: " + id);
+        }
+
+        try {
+            // simulated multi-step critical section — stands in for
+            // "check stock, call slow external service, decrement" — no
+            // single Redis command could make this whole sequence atomic,
+            // which is exactly why we need a lock instead
+            log.info("Checkout started for product {} (token {})", id, token);
+            Thread.sleep(1000);
+            log.info("Checkout finished for product {} (token {})", id, token);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            // 10.1: naive release — plain DEL, no ownership check yet.
+            // This is deliberately unsafe; 10.2 fixes it with a Lua
+            // compare-and-delete so we never delete someone else's lock.
+            redisTemplate.delete(lockKey);
+        }
+
+        return "Checkout completed for product " + id;
+    }
+
+    // 10.2: DELIBERATELY reproduces the TTL-expiry overlap bug — short lock
+// expiry (500ms), long critical section (2000ms). The lock expires while
+// still "held," so a second caller acquires it and both callers end up
+// inside the critical section at the same time. This proves a single-node
+// lock's PX alone doesn't guarantee exclusivity if the work outlives it.
+    public String lockedCheckoutBrokenTtl(Long id) {
+        String lockKey = "lock:product:" + id;
+        String token = UUID.randomUUID().toString();
+
+        Boolean acquired = redisTemplate.opsForValue().setIfAbsent(
+                lockKey, token, Duration.ofMillis(500)   // too short for the work below
+        );
+
+        if (!Boolean.TRUE.equals(acquired)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Checkout already in progress for: " + id);
+        }
+
+        try {
+            log.info("BROKEN checkout started for product {} (token {})", id, token);
+            Thread.sleep(2000);  // outlives the 500ms lock — this is the bug
+            log.info("BROKEN checkout finished for product {} (token {})", id, token);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            safeUnlock(lockKey, token);
+        }
+
+        return "Checkout completed (broken TTL demo) for product " + id;
+    }
+    // 10.2: safe unlock — only delete the lock if it still holds OUR token.
+// A plain DEL (10.1) would delete whatever is at this key, even if our
+// lock already expired and someone else has since acquired it. The check
+// and the delete must happen as ONE atomic step (Lua), otherwise another
+// client could acquire the lock in the gap between our GET check and our
+// DEL call — which would defeat the whole point of checking first.
+    private static final RedisScript<Long> UNLOCK_SCRIPT = RedisScript.of(
+            "if redis.call('GET', KEYS[1]) == ARGV[1] then " +
+                    "  return redis.call('DEL', KEYS[1]) " +
+                    "else " +
+                    "  return 0 " +
+                    "end",
+            Long.class
+    );
+
+    private void safeUnlock(String lockKey, String token) {
+        Long result = redisTemplate.execute(UNLOCK_SCRIPT, Collections.singletonList(lockKey), token);
+        if (result == 0) {
+            log.warn("Tried to unlock {} but token didn't match — lock was not ours anymore", lockKey);
+        }
+    }
 
 }
 
