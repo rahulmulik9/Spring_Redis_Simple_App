@@ -221,7 +221,7 @@ public class ShopService {
     /// ================= Race condition : When multiple requrest hit buy at same time
     /// Two way to handle tace contion : By sql and another by Redis
     //Race Handled By using sql
-    // 1: naive buy (9.1) lost decrements when many concurrent requests all read the same stock value before any of them saved.
+    // 1: naive buy lost decrements when many concurrent requests all read the same stock value before any of them saved.
     // Fixed here with a conditional UPDATE — Postgres only decrements if stock is still > 0 at the moment the UPDATE runs,
     // so there's no separate read-then-write gap for two requests to race inside.
     public Product buy(Long id) {
@@ -235,10 +235,9 @@ public class ShopService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id));
     }
 
-    // 9.2 (Redis version): atomic decrement via Redis DECR.
+    // Redis version : atomic decrement via Redis DECR.
     // Redis is single-threaded, so each command below runs fully before the next one starts — even with 20 concurrent requests,
     // there's no gap for two threads to read the same value and both decide to decrement it.
-
     // setIfAbsent seeds the Redis stock counter from Postgres, but only on the very first buy for this product —
     // later calls see the key already exists and skip seeding, so stock never gets reset mid-sale.
     public Product buyWithRedisDecr(Long id) {
@@ -272,6 +271,8 @@ public class ShopService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found: " + id))
                 .getStock();
     }
+
+
 
 }
 
