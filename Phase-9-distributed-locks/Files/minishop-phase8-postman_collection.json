@@ -1,19 +1,45 @@
 {
   "info": {
     "name": "Redis Mini Shop",
-    "description": "Redis Mini Shop - matches ShopController, CartController, WishlistController, RecentlyViewedController as of Phase 5.",
+    "description": "All endpoints across ShopController, CartController, CouponController, RecentlyViewedController, WishlistController",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "productId", "value": "1" },
-    { "key": "userId", "value": "1" },
-    { "key": "qty", "value": "1" }
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "productId", "value": "1", "type": "string" },
+    { "key": "userId", "value": "101", "type": "string" }
   ],
   "item": [
     {
-      "name": "Products (ShopController)",
+      "name": "Products",
       "item": [
+        {
+          "name": "Get product by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}", "description": "optional — triggers view tracking, recently-viewed, and score increment" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get product by id (no userId, no view tracking)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            }
+          }
+        },
         {
           "name": "Get all products",
           "request": {
@@ -27,33 +53,6 @@
           }
         },
         {
-          "name": "Get product (no userId - no tracking)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/products/{{productId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["products", "{{productId}}"]
-            }
-          }
-        },
-        {
-          "name": "Get product (with userId - view + recent + score)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/products/{{productId}}?userId={{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["products", "{{productId}}"],
-              "query": [
-                { "key": "userId", "value": "{{userId}}" }
-              ]
-            }
-          }
-        },
-        {
           "name": "Update product",
           "request": {
             "method": "PUT",
@@ -62,8 +61,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Wireless Mouse Pro\",\n  \"price\": 999.00,\n  \"stock\": 45\n}",
-              "options": { "raw": { "language": "json" } }
+              "raw": "{\n  \"name\": \"Sample Product\",\n  \"price\": 499.0,\n  \"stock\": 20\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/products/{{productId}}",
@@ -73,31 +71,19 @@
           }
         },
         {
-          "name": "Delete product 20",
+          "name": "Delete product",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/products/20",
+              "raw": "{{baseUrl}}/products/{{productId}}",
               "host": ["{{baseUrl}}"],
-              "path": ["products", "20"]
+              "path": ["products", "{{productId}}"]
             }
           }
         },
         {
-          "name": "Get missing product (404)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/products/99999",
-              "host": ["{{baseUrl}}"],
-              "path": ["products", "99999"]
-            }
-          }
-        },
-        {
-          "name": "Add view (direct counter endpoint)",
+          "name": "Add view (increment view count)",
           "request": {
             "method": "POST",
             "header": [],
@@ -122,11 +108,59 @@
               ]
             }
           }
+        },
+        {
+          "name": "Buy (SQL conditional UPDATE)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/buy",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}", "buy"]
+            }
+          }
+        },
+        {
+          "name": "Buy (Redis DECR / Lua)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/buy-redis",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}", "buy-redis"]
+            }
+          }
+        },
+        {
+          "name": "Checkout (broken TTL demo — 10.2)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/checkout-broken-ttl",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}", "checkout-broken-ttl"]
+            }
+          }
+        },
+        {
+          "name": "Checkout (Redisson RLock — 10.3)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}/checkout-redisson",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}", "checkout-redisson"]
+            }
+          }
         }
       ]
     },
     {
-      "name": "Cart (CartController)",
+      "name": "Cart",
       "item": [
         {
           "name": "Add to cart",
@@ -134,13 +168,13 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/cart/add?userId={{userId}}&productId={{productId}}&qty={{qty}}",
+              "raw": "{{baseUrl}}/cart/add?userId={{userId}}&productId={{productId}}&qty=1",
               "host": ["{{baseUrl}}"],
               "path": ["cart", "add"],
               "query": [
                 { "key": "userId", "value": "{{userId}}" },
                 { "key": "productId", "value": "{{productId}}" },
-                { "key": "qty", "value": "{{qty}}" }
+                { "key": "qty", "value": "1" }
               ]
             }
           }
@@ -166,19 +200,19 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/cart/decrease?userId={{userId}}&productId={{productId}}&qty={{qty}}",
+              "raw": "{{baseUrl}}/cart/decrease?userId={{userId}}&productId={{productId}}&qty=1",
               "host": ["{{baseUrl}}"],
               "path": ["cart", "decrease"],
               "query": [
                 { "key": "userId", "value": "{{userId}}" },
                 { "key": "productId", "value": "{{productId}}" },
-                { "key": "qty", "value": "{{qty}}" }
+                { "key": "qty", "value": "1" }
               ]
             }
           }
         },
         {
-          "name": "Remove item from cart",
+          "name": "Remove from cart",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -196,7 +230,48 @@
       ]
     },
     {
-      "name": "Wishlist (WishlistController)",
+      "name": "Coupon",
+      "item": [
+        {
+          "name": "Claim coupon",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/coupon/claim?code=WELCOME10&userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["coupon", "claim"],
+              "query": [
+                { "key": "code", "value": "WELCOME10" },
+                { "key": "userId", "value": "{{userId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recently Viewed",
+      "item": [
+        {
+          "name": "Get recently viewed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recently-viewed?userId={{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["recently-viewed"],
+              "query": [
+                { "key": "userId", "value": "{{userId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist",
       "item": [
         {
           "name": "Add to wishlist",
@@ -241,63 +316,6 @@
               "query": [
                 { "key": "userId", "value": "{{userId}}" },
                 { "key": "productId", "value": "{{productId}}" }
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Coupon (CouponController)",
-      "item": [
-        {
-          "name": "Claim coupon",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/coupon/claim?code=SAVE10&userId={{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["coupon", "claim"],
-              "query": [
-                { "key": "code", "value": "SAVE10" },
-                { "key": "userId", "value": "{{userId}}" }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Claim coupon - different code",
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/coupon/claim?code=WELCOME20&userId={{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["coupon", "claim"],
-              "query": [
-                { "key": "code", "value": "WELCOME20" },
-                { "key": "userId", "value": "{{userId}}" }
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Recently Viewed (RecentlyViewedController)",
-      "item": [
-        {
-          "name": "Get recently viewed",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/recently-viewed?userId={{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["recently-viewed"],
-              "query": [
-                { "key": "userId", "value": "{{userId}}" }
               ]
             }
           }
